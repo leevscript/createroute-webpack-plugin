@@ -6,7 +6,6 @@ const fs = require('fs-extra')
 const chokidar = require('chokidar')
 
 const glob = pify(Glob)
-const DYNAMIC_ROUTE_REGEX = /^\/(:|\*)/
 const ID = 'createRoute-webpack-plugin'
 
 module.exports = class {
@@ -95,38 +94,59 @@ module.exports = class {
   cleanChildrenRoutes(routes, isChild = false) {
     let start = -1
     const routesIndex = []
-    routes.forEach((route) => {
+
+    /*
+    * 首页路由处理
+    * 将带有index的路由组成routesIndex集合
+    * 优化算法，先找出最小起始位置start
+    * */
+    routes.forEach(route => {
       if (/_index$/.test(route.name) || route.name === 'index') {
         const res = route.name.split('_')
-        const s = res.indexOf('index')
-        start = start === -1 || s < start ? s : start
+        const index = res.indexOf('index')
+        start = start === -1 || index < start ? index : start
         routesIndex.push(res)
       }
     })
-    routes.forEach((route) => {
+
+    // 路由处理
+    routes.forEach(route => {
+      // 如果是子路由，path不能带有'/'
       route.path = isChild ? route.path.replace('/', '') : route.path
+
+      // 动态路由处理
       if (route.path.includes('?')) {
         const names = route.name.split('_')
         const paths = route.path.split('/')
+
+        // 如果不是子路由，path[0]为空字符，删掉
         if (!isChild) {
           paths.shift()
         }
-        routesIndex.forEach((r) => {
-          const i = r.indexOf('index') - start
+
+        // 如果该动态路由下有index，则动态路由必选传参，去掉'?'
+        routesIndex.forEach(val => {
+          const i = val.indexOf('index') - start
           if (i < paths.length) {
             for (let a = 0; a <= i; a++) {
               if (a === i) {
                 paths[a] = paths[a].replace('?', '')
               }
-              if (a < i && names[a] !== r[a]) {
+              if (a < i && names[a] !== val[a]) {
                 break
               }
             }
           }
         })
+
+        // 如果是子路由，path不能以'/'开头
         route.path = (isChild ? '' : '/') + paths.join('/')
       }
+
+      // 删除name中的index
       route.name = route.name.replace(/_index$/, '')
+
+      // 如果有子路由，递归处理
       if (route.children) {
         if (route.children.find(child => child.path === '')) {
           delete route.name
@@ -158,7 +178,7 @@ module.exports = class {
   * */
   createRoute(files) {
     const routes = []
-    files.forEach((file) => {
+    files.forEach(file => {
       // 将文件路径用 / 隔开
       const keys = file
         .replace(RegExp(`^${this.pagesDir}`), '')
@@ -197,36 +217,6 @@ module.exports = class {
         }
       })
       parent.push(route)
-
-      // 每次循环处理前将所有路由按照层级深浅排序
-      parent.sort((a, b) => {
-        if (!a.path.length) {
-          return -1
-        }
-        if (!b.path.length) {
-          return 1
-        }
-        if (a.path === '/') {
-          return DYNAMIC_ROUTE_REGEX.test(b.path) ? -1 : 1
-        }
-        if (b.path === '/') {
-          return DYNAMIC_ROUTE_REGEX.test(a.path) ? 1 : -1
-        }
-
-        let i, res = 0, y = 0, z = 0
-        const _a = a.path.split('/')
-        const _b = b.path.split('/')
-        for (i = 0; i < _a.length; i++) {
-          if (res !== 0) break
-          y = _a[i] === '*' ? 2 : _a[i].includes(':') ? 1 : 0
-          z = _b[i] === '*' ? 2 : _b[i].includes(':') ? 1 : 0
-          res = y - z
-          if (i === _b.length - 1 && res === 0) {
-            res = _a[i] === '*' ? -1 : 1
-          }
-        }
-        return res === 0 ? (_a[i - 1] === '*' && _b[i] ? 1 : -1) : res
-      })
     })
     return this.cleanChildrenRoutes(routes)
   }
