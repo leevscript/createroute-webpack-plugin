@@ -1,6 +1,6 @@
 {
   "name": "createroute-webpack-plugin",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "根据目录结构自动生成vue路由",
   "main": "main.js",
   "scripts": {

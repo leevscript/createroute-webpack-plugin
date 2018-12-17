@@ -9,9 +9,9 @@ const glob = pify(Glob)
 const ID = 'createRoute-webpack-plugin'
 
 module.exports = class {
-  constructor({pagesDir, outputDir = path.dirname(pagesDir), mixin = {}}) {
+  constructor({pagesDir, output = path.join(pagesDir, '../', 'routes.js'), mixin = {}}) {
     this.pagesDir = pagesDir
-    this.outputDir = outputDir
+    this.output = output
     this.mixin = mixin
     this.watching = false
     this.watcher = null
@@ -52,7 +52,7 @@ module.exports = class {
     const routes = this.createRoute(files)
     const fileContent = await fs.readFile(path.resolve(__dirname, './template/router.js'), 'utf8')
     const template = _.template(fileContent, {interpolate: /<%=([\s\S]+?)%>/g})
-    await fs.outputFile(this.outputDir + '/routes.js', template({routes}), 'utf8')
+    await fs.outputFile(this.output, template({routes}), 'utf8')
   }
 
   /*
@@ -169,6 +169,18 @@ module.exports = class {
     return key
   }
 
+  /*
+    * @desc 处理页面路由路径
+    * @param {string} file 文件路径
+    * @return {string}
+    * */
+  getComponentRoutePath(file) {
+    let route = path.relative(path.dirname(this.output), file).replace(/\\+/g, '/')
+    if (!route.startsWith('.')) {
+      return './' + route
+    }
+    return route
+  }
 
   /*
   * @desc 生成路由
@@ -188,7 +200,7 @@ module.exports = class {
         .slice(1)
       // 如果文件已'!'开头，认为路由删除，直接跳过
       if (keys.find(val => val.startsWith('!'))) return
-      const route = {name: '', path: '', component: './' + path.relative(this.outputDir, file).replace(/\\+/g, '/')}
+      const route = {name: '', path: '', component: this.getComponentRoutePath(file)}
       let parent = routes
       keys.forEach((key, i) => {
         // 如果节点有空格' '，则混入配置项

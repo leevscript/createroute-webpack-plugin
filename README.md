@@ -1,4 +1,6 @@
 # create-route
+![](https://img.shields.io/appveyor/ci/gruntjs/grunt.svg)
+![](https://img.shields.io/badge/npm-v1.0.3-green.svg)
 
 ## 使用
 ![image](https://pic3.zhuanstatic.com/zhuanzh/n_v24595d76146fd4ea7b52b9b0cedd24d8f.png)
@@ -6,6 +8,7 @@
 plugins: [
   new CreateRoute({
     pagesDir: 'src/view', // vue页面位置
+    output: 'src/routes.js', // 输出路由文件位置
     mixin: { // 定义混入属性
       'l': {
         meta: {
@@ -17,7 +20,7 @@ plugins: [
 ]
 ```
 
-### 生成router.js文件
+### 生成routes.js文件
 ```
 export default [
 	{
