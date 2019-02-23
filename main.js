@@ -207,7 +207,7 @@ module.exports = class {
         let temp = key.split(/\s+/)
         if (temp.length > 1) {
           key = temp[0]
-          temp.slice(1).forEach(val => _.assign(route, this.mixin[val]))
+          temp.slice(1).forEach(val => _.merge(route, this.mixin[val]))
         }
 
         // 如果节点以'_'开头，认为是动态路由
