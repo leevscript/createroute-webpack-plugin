@@ -7,6 +7,7 @@ const chokidar = require('chokidar')
 
 const glob = pify(Glob)
 const ID = 'createRoute-webpack-plugin'
+const DYNAMIC_ROUTE_REGEX = /^\/(:|\*)/
 
 module.exports = class {
   constructor({pagesDir, output = path.join(pagesDir, '../', 'routes.js'), mixin = {}}) {
@@ -94,7 +95,6 @@ module.exports = class {
   cleanChildrenRoutes(routes, isChild = false) {
     let start = -1
     const routesIndex = []
-
     /*
     * 首页路由处理
     * 将带有index的路由组成routesIndex集合
@@ -229,6 +229,36 @@ module.exports = class {
         }
       })
       parent.push(route)
+
+      // 每次循环处理前将所有路由按照层级深浅排序
+      parent.sort((a, b) => {
+        if (!a.path.length) {
+          return -1
+        }
+        if (!b.path.length) {
+          return 1
+        }
+        if (a.path === '/') {
+          return DYNAMIC_ROUTE_REGEX.test(b.path) ? -1 : 1
+        }
+        if (b.path === '/') {
+          return DYNAMIC_ROUTE_REGEX.test(a.path) ? 1 : -1
+        }
+
+        let i, res = 0, y = 0, z = 0
+        const _a = a.path.split('/')
+        const _b = b.path.split('/')
+        for (i = 0; i < _a.length; i++) {
+          if (res !== 0) break
+          y = _a[i] === '*' ? 2 : _a[i].includes(':') ? 1 : 0
+          z = _b[i] === '*' ? 2 : _b[i].includes(':') ? 1 : 0
+          res = y - z
+          if (i === _b.length - 1 && res === 0) {
+            res = _a[i] === '*' ? -1 : 1
+          }
+        }
+        return res === 0 ? (_a[i - 1] === '*' && _b[i] ? 1 : -1) : res
+      })
     })
     return this.cleanChildrenRoutes(routes)
   }

@@ -1,6 +1,6 @@
 # create-route
 ![](https://img.shields.io/appveyor/ci/gruntjs/grunt.svg)
-![](https://img.shields.io/badge/npm-v1.0.3-green.svg)
+![](https://img.shields.io/badge/npm-v1.0.5-green.svg)
 
 ## 使用
 ![image](https://pic3.zhuanstatic.com/zhuanzh/n_v24595d76146fd4ea7b52b9b0cedd24d8f.png)
